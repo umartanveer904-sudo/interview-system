@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Smart Interview System</title>
+
+<style>
+body{
+    margin:0;
+    font-family:Verdana;
+    background:linear-gradient(to right,#141e30,#243b55);
+}
+.card{
+    width:80%;
+    margin:30px auto;
+    background:white;
+    padding:20px;
+    border-radius:15px;
+}
+h2{
+    text-align:center;
+    color:#141e30;
+}
+input, textarea{
+    width:100%;
+    padding:10px;
+    margin:8px 0;
+    border-radius:8px;
+    border:1px solid #ccc;
+}
+textarea{
+    height:60px;
+}
+button{
+    background:#141e30;
+    color:white;
+    padding:12px;
+    border:none;
+    border-radius:10px;
+    width:100%;
+    font-size:16px;
+    cursor:pointer;
+}
+button:hover{
+    background:#243b55;
+}
+#timer{
+    text-align:center;
+    font-size:18px;
+    color:red;
+    margin-bottom:10px;
+}
+.hide{
+    display:none;
+}
+.result-box{
+    background:#f4f4f4;
+    padding:15px;
+    border-radius:10px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- REGISTRATION -->
+<div class="card" id="reg">
+    <h2>Candidate Registration</h2>
+    <input id="studentName" placeholder="Student Name">
+    <input id="fatherName" placeholder="Father Name">
+    <input id="rollNo" placeholder="Roll Number">
+    <input id="cnicNo" placeholder="CNIC Number">
+    <button onclick="startTest()">Start Interview</button>
+</div>
+
+<!-- INTERVIEW -->
+<div class="card hide" id="test">
+    <h2>Interview Session</h2>
+    <div id="timer">Time Left: 300</div>
+    <div id="qArea"></div>
+    <button onclick="submitTest()">Finish Interview</button>
+</div>
+
+<!-- RESULT -->
+<div class="card hide" id="result">
+    <h2>Final Result</h2>
+    <div class="result-box">
+        <p id="rName"></p>
+        <p id="rFather"></p>
+        <p id="rRoll"></p>
+        <p id="rCNIC"></p>
+        <p id="rScore"></p>
+        <h3 id="rStatus"></h3>
+    </div>
+</div>
+
+<script>
+let time = 300;
+let timer;
+let score = 0;
+
+const questions = [
+ "What is Python?",
+ "Why Python is popular?",
+ "Explain loops",
+ "What is a function?",
+ "What is Machine Learning?",
+ "AI vs ML difference?",
+ "What is data analysis?",
+ "How do you clean data?",
+ "What is NumPy?",
+ "What is Pandas?",
+ "How do you solve problems?",
+ "Explain logical thinking",
+ "What is communication?",
+ "How to explain solutions?",
+ "What is teamwork?",
+ "What is debugging?",
+ "What is an algorithm?",
+ "Real world problem solving?",
+ "What are your strengths?",
+ "Why should we hire you?"
+];
+
+const keywords = [
+ "python","loop","function","machine","ml","data",
+ "analysis","numpy","pandas","problem","logic",
+ "solution","communication","team","debug"
+];
+
+function startTest(){
+    if(studentName.value=="" || fatherName.value=="" || rollNo.value=="" || cnicNo.value==""){
+        alert("Please fill all fields");
+        return;
+    }
+
+    reg.classList.add("hide");
+    test.classList.remove("hide");
+
+    let area = document.getElementById("qArea");
+    area.innerHTML = "";
+
+    questions.forEach((q,i)=>{
+        area.innerHTML += `<p>${i+1}. ${q}</p>
+                           <textarea id="ans${i}"></textarea>`;
+    });
+
+    timer = setInterval(()=>{
+        time--;
+        document.getElementById("timer").innerText="Time Left: "+time;
+        if(time<=0) submitTest();
+    },1000);
+}
+
+function submitTest(){
+    clearInterval(timer);
+    score = 0;
+
+    for(let i=0;i<questions.length;i++){
+        let a = document.getElementById("ans"+i).value.toLowerCase();
+        keywords.forEach(k=>{
+            if(a.includes(k)) score++;
+        });
+    }
+
+    let percent = Math.min(Math.round((score/40)*100),100);
+    let status = percent>=60 ? "SELECTED 🎉" :
+                 percent>=40 ? "BORDERLINE ⚠" :
+                 "NOT SELECTED ❌";
+
+    test.classList.add("hide");
+    result.classList.remove("hide");
+
+    rName.innerText   = "Name: " + studentName.value;
+    rFather.innerText = "Father Name: " + fatherName.value;
+    rRoll.innerText   = "Roll No: " + rollNo.value;
+    rCNIC.innerText   = "CNIC: " + cnicNo.value;
+    rScore.innerText  = "Confidence Score: " + percent + "%";
+    rStatus.innerText = status;
+}
+</script>
+
+</body>
+</html>
