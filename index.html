@@ -1,181 +1,197 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Smart Interview System</title>
+<meta charset="UTF-8">
+<title>Interview System</title>
 
 <style>
 body{
-    margin:0;
-    font-family:Verdana;
-    background:linear-gradient(to right,#141e30,#243b55);
+  font-family: Arial;
+  background:#0f172a;
+  color:white;
+  text-align:center;
 }
-.card{
-    width:80%;
-    margin:30px auto;
-    background:white;
-    padding:20px;
-    border-radius:15px;
+.box{
+  width:90%;
+  max-width:650px;
+  margin:40px auto;
+  background:#1e293b;
+  padding:20px;
+  border-radius:10px;
 }
-h2{
-    text-align:center;
-    color:#141e30;
-}
-input, textarea{
-    width:100%;
-    padding:10px;
-    margin:8px 0;
-    border-radius:8px;
-    border:1px solid #ccc;
-}
-textarea{
-    height:60px;
+input,select,button{
+  width:90%;
+  padding:10px;
+  margin:8px;
+  border:none;
+  border-radius:5px;
 }
 button{
-    background:#141e30;
-    color:white;
-    padding:12px;
-    border:none;
-    border-radius:10px;
-    width:100%;
-    font-size:16px;
-    cursor:pointer;
+  background:#38bdf8;
+  font-weight:bold;
+  cursor:pointer;
 }
-button:hover{
-    background:#243b55;
+.skip{
+  background:#f97316;
 }
-#timer{
-    text-align:center;
-    font-size:18px;
-    color:red;
-    margin-bottom:10px;
-}
-.hide{
-    display:none;
-}
-.result-box{
-    background:#f4f4f4;
-    padding:15px;
-    border-radius:10px;
-}
+.hide{display:none;}
 </style>
 </head>
 
 <body>
 
-<!-- REGISTRATION -->
-<div class="card" id="reg">
-    <h2>Candidate Registration</h2>
-    <input id="studentName" placeholder="Student Name">
-    <input id="fatherName" placeholder="Father Name">
-    <input id="rollNo" placeholder="Roll Number">
-    <input id="cnicNo" placeholder="CNIC Number">
-    <button onclick="startTest()">Start Interview</button>
+<div class="box">
+<h2>🎤 Online Interview</h2>
+
+<!-- STEP 1 -->
+<div id="step1">
+<select id="domain">
+<option value="">Select Subject</option>
+<option value="oop">OOP</option>
+<option value="python">Python</option>
+<option value="algo">Algorithm</option>
+<option value="js">JavaScript</option>
+<option value="html">HTML</option>
+<option value="css">CSS</option>
+</select>
+
+<input id="userName" placeholder="Name">
+<input id="fatherName" placeholder="Father Name">
+<input id="rollNo" placeholder="Roll No">
+<input id="cnicNo" placeholder="CNIC">
+
+<button onclick="start()">Start Interview</button>
 </div>
 
-<!-- INTERVIEW -->
-<div class="card hide" id="test">
-    <h2>Interview Session</h2>
-    <div id="timer">Time Left: 300</div>
-    <div id="qArea"></div>
-    <button onclick="submitTest()">Finish Interview</button>
+<!-- STEP 2 -->
+<div id="step2" class="hide">
+<h3 id="q"></h3>
+<input id="ans" placeholder="Your answer">
+
+<button onclick="nextQ()">Next</button>
+<button class="skip" onclick="skipQ()">Skip</button>
 </div>
 
 <!-- RESULT -->
-<div class="card hide" id="result">
-    <h2>Final Result</h2>
-    <div class="result-box">
-        <p id="rName"></p>
-        <p id="rFather"></p>
-        <p id="rRoll"></p>
-        <p id="rCNIC"></p>
-        <p id="rScore"></p>
-        <h3 id="rStatus"></h3>
-    </div>
+<div id="result" class="hide">
+<h2>📊 Final Result</h2>
+<p id="out"></p>
+</div>
+
 </div>
 
 <script>
-let time = 300;
-let timer;
-let score = 0;
+let d="", i=0, score=0;
+let skipped=[];
 
-const questions = [
- "What is Python?",
- "Why Python is popular?",
- "Explain loops",
- "What is a function?",
- "What is Machine Learning?",
- "AI vs ML difference?",
- "What is data analysis?",
- "How do you clean data?",
- "What is NumPy?",
- "What is Pandas?",
- "How do you solve problems?",
- "Explain logical thinking",
- "What is communication?",
- "How to explain solutions?",
- "What is teamwork?",
- "What is debugging?",
- "What is an algorithm?",
- "Real world problem solving?",
- "What are your strengths?",
- "Why should we hire you?"
-];
+const quiz={
+oop:[
+"What is OOP?","What is class?","What is object?",
+"Encapsulation?","Inheritance?","Polymorphism?",
+"Abstraction?","Constructor?","Destructor?","Why OOP?"
+],
+python:[
+"What is Python?","List?","Tuple?","Dictionary?",
+"Function?","Loop?","OOP in Python?","PIP?",
+"Interpreted?","Why Python?"
+],
+algo:[
+"What is algorithm?","Time complexity?","Space complexity?",
+"Linear search?","Binary search?","Sorting?",
+"Recursion?","Stack?","Queue?","Big O?"
+],
+js:[
+"What is JavaScript?","DOM?","Event?","Variable?",
+"Function?","Array?","Object?","Closure?",
+"Async JS?","var vs let?"
+],
+html:[
+"What is HTML?","Tag?","Attribute?","Heading tag?",
+"Paragraph?","Anchor tag?","Image tag?",
+"Form?","Semantic HTML?","Div vs span?"
+],
+css:[
+"What is CSS?","Selector?","Class selector?","ID selector?",
+"Box model?","Flexbox?","Grid?",
+"Margin?","Padding?","Inline vs block?"
+]
+};
 
-const keywords = [
- "python","loop","function","machine","ml","data",
- "analysis","numpy","pandas","problem","logic",
- "solution","communication","team","debug"
-];
+const keys={
+oop:["class","object","inherit","poly","abstract"],
+python:["python","list","function","loop","dict"],
+algo:["algorithm","complexity","search","sort","recursion"],
+js:["javascript","dom","event","function","array"],
+html:["html","tag","form","div","span"],
+css:["css","style","selector","box","flex"]
+};
 
-function startTest(){
-    if(studentName.value=="" || fatherName.value=="" || rollNo.value=="" || cnicNo.value==""){
-        alert("Please fill all fields");
-        return;
-    }
+function start(){
+d = document.getElementById("domain").value;
+if(d===""){ alert("Select subject"); return; }
 
-    reg.classList.add("hide");
-    test.classList.remove("hide");
-
-    let area = document.getElementById("qArea");
-    area.innerHTML = "";
-
-    questions.forEach((q,i)=>{
-        area.innerHTML += `<p>${i+1}. ${q}</p>
-                           <textarea id="ans${i}"></textarea>`;
-    });
-
-    timer = setInterval(()=>{
-        time--;
-        document.getElementById("timer").innerText="Time Left: "+time;
-        if(time<=0) submitTest();
-    },1000);
+document.getElementById("step1").classList.add("hide");
+document.getElementById("step2").classList.remove("hide");
+show();
 }
 
-function submitTest(){
-    clearInterval(timer);
-    score = 0;
+function show(){
+document.getElementById("q").innerText =
+`Question ${i+1}/10: ${quiz[d][i]}`;
+}
 
-    for(let i=0;i<questions.length;i++){
-        let a = document.getElementById("ans"+i).value.toLowerCase();
-        keywords.forEach(k=>{
-            if(a.includes(k)) score++;
-        });
-    }
+function nextQ(){
+checkAnswer();
+i++;
+nextFlow();
+}
 
-    let percent = Math.min(Math.round((score/40)*100),100);
-    let status = percent>=60 ? "SELECTED 🎉" :
-                 percent>=40 ? "BORDERLINE ⚠" :
-                 "NOT SELECTED ❌";
+function skipQ(){
+skipped.push(i);
+i++;
+nextFlow();
+}
 
-    test.classList.add("hide");
-    result.classList.remove("hide");
+function nextFlow(){
+document.getElementById("ans").value="";
+if(i < quiz[d].length){
+ show();
+}
+else if(skipped.length > 0){
+ i = skipped.shift();
+ show();
+}
+else{
+ finish();
+}
+}
 
-    rName.innerText   = "Name: " + studentName.value;
-    rFather.innerText = "Father Name: " + fatherName.value;
-    rRoll.innerText   = "Roll No: " + rollNo.value;
-    rCNIC.innerText   = "CNIC: " + cnicNo.value;
-    rScore.innerText  = "Confidence Score: " + percent + "%";
-    rStatus.innerText = status;
+function checkAnswer(){
+let a = document.getElementById("ans").value.toLowerCase();
+keys[d].forEach(k=>{
+ if(a.includes(k)) score += 7;
+});
+}
+
+function finish(){
+document.getElementById("step2").classList.add("hide");
+document.getElementById("result").classList.remove("hide");
+
+let name = document.getElementById("userName").value;
+let father = document.getElementById("fatherName").value;
+let roll = document.getElementById("rollNo").value;
+let cnic = document.getElementById("cnicNo").value;
+
+let pass = score >= 70 ? "✅ PASS" : "❌ FAIL";
+
+document.getElementById("out").innerHTML =
+`Name: ${name}<br>
+Father: ${father}<br>
+Roll No: ${roll}<br>
+CNIC: ${cnic}<br><br>
+Subject: ${d.toUpperCase()}<br>
+Score: ${score}/100<br>
+Result: <b>${pass}</b>`;
 }
 </script>
 
