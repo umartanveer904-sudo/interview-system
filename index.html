@@ -67,6 +67,24 @@ th,td{
 }
 h2,h3{margin-top:0;}
 hr{border:none;height:1px;background:linear-gradient(to right,transparent,#00ffe0,transparent);margin:15px 0;}
+.role-card{
+ border:2px solid #fff;
+ padding:15px;
+ border-radius:15px;
+ width:120px;
+ cursor:pointer;
+ text-align:center;
+ transition:0.3s;
+}
+.role-card img{width:60px;}
+.role-card.selected{border-color:#00ffea;}
+#roleInstructions{
+ background:rgba(0,0,0,.5);
+ padding:10px;
+ border-radius:10px;
+ display:none;
+ margin-top:10px;
+}
 </style>
 </head>
 <body>
@@ -74,17 +92,28 @@ hr{border:none;height:1px;background:linear-gradient(to right,transparent,#00ffe
 <h2>🧠 AI Interview Room System</h2>
 <p id="timer">Time: 10:00</p>
 
-<!-- PAGE 1: Room & Role -->
+<!-- PAGE 1: Role Selection -->
 <div class="card" id="page1">
-<h3>Enter Room & Role</h3>
+<h3>Enter Room & Select Role</h3>
 <input id="inputRoom" placeholder="Enter Room Name (e.g. DJ123)"><br><br>
-<select id="inputRole">
-<option value="">Select Role</option>
-<option value="user">Candidate</option>
-<option value="admin">Admin</option>
-</select><br><br>
+
+<div style="display:flex; justify-content:space-around; margin:20px 0;">
+  <div id="cardCandidate" class="role-card" onclick="selectRole('user')">
+    <img src="https://cdn-icons-png.flaticon.com/512/1946/1946429.png"><br>
+    Candidate
+  </div>
+  <div id="cardAdmin" class="role-card" onclick="selectRole('admin')">
+    <img src="https://cdn-icons-png.flaticon.com/512/1055/1055687.png"><br>
+    Admin
+  </div>
+</div>
+
+<div id="roleInstructions">
+<p id="instructionText"></p>
+</div>
+
+<button id="roleContinue" onclick="checkRoomRole()" disabled>Continue</button>
 <div id="roomError"></div>
-<button onclick="checkRoomRole()">Continue</button>
 </div>
 
 <!-- PAGE 2: Admin Login -->
@@ -151,6 +180,7 @@ const questionsTemplate=[
 
 let room="",role="",index=0,score=0,time=600,skip=[],timer;
 let questions=[],originalQuestions=[];
+let selectedRole = "";
 
 // ===== Page Control =====
 function showPage(id){
@@ -158,10 +188,31 @@ function showPage(id){
  document.getElementById(id).classList.remove("hidden");
 }
 
+// ===== Role Selection =====
+function selectRole(role){
+ selectedRole = role;
+ document.getElementById("roleContinue").disabled=false;
+ // highlight
+ document.getElementById("cardCandidate").classList.remove("selected");
+ document.getElementById("cardAdmin").classList.remove("selected");
+ if(role==='user') document.getElementById("cardCandidate").classList.add("selected");
+ else document.getElementById("cardAdmin").classList.add("selected");
+
+// Instructions
+const board=document.getElementById("roleInstructions");
+board.style.display="block";
+const text=document.getElementById("instructionText");
+if(role==='user'){
+ text.innerHTML = "📌 Candidate Instructions:<br>- Fill all fields<br>- Answer 10 questions<br>- Total score 100<br>- Passing 70%<br>- 10 min timer";
+}else{
+ text.innerHTML = "📌 Admin Instructions:<br>- Use username & password<br>- View candidate records<br>- Authorized only";
+}
+}
+
 // ===== Room + Role Check =====
 function checkRoomRole(){
  room=document.getElementById("inputRoom").value.trim();
- role=document.getElementById("inputRole").value;
+ role = selectedRole;
  if(!room || !role){
   document.getElementById("roomError").innerText="Enter Room & select Role";
   return;
@@ -240,9 +291,9 @@ function nextQuestion(){
  if(index < questions.length){
      showQuestion();
  } else if(skip.length > 0){
-     questions = [...skip]; // only show skipped once
-     skip = [];
-     index = 0;
+     questions = [...skip];
+     skip=[];
+     index=0;
      showQuestion();
  } else {
      endInterview();
