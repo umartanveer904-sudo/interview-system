@@ -1,176 +1,285 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>Interview Skill Test</title>
-
+<meta charset="UTF-8">
+<title>AI Interview Room System</title>
 <style>
 body{
-    font-family: Arial;
-    background: linear-gradient(to right,#667eea,#764ba2);
-    color:white;
-    text-align:center;
+ margin:0;
+ font-family:Segoe UI,Arial;
+ background:linear-gradient(rgba(0,0,0,.6),rgba(0,0,0,.6)),
+ url("https://images.unsplash.com/photo-1521737604893-d14cc237f11d");
+ background-size:cover;
+ color:white;
+ text-align:center;
 }
-.box{
-    background:white;
-    color:black;
-    padding:20px;
-    border-radius:10px;
-    width:90%;
-    max-width:500px;
-    margin:auto;
+.card{
+ max-width:750px;
+ margin:30px auto;
+ background:rgba(255,255,255,.15);
+ backdrop-filter:blur(8px);
+ padding:25px;
+ border-radius:20px;
 }
-input,textarea{
-    width:90%;
-    padding:8px;
-    margin:5px;
+.hidden{display:none;}
+input,textarea,select{
+ width:90%;
+ padding:10px;
+ margin:6px;
+ border-radius:8px;
+ border:none;
 }
 button{
-    padding:10px 20px;
-    background:#667eea;
-    color:white;
-    border:none;
-    border-radius:5px;
-    cursor:pointer;
+ padding:10px 25px;
+ border:none;
+ border-radius:30px;
+ background:#ff7e5f;
+ color:white;
+ cursor:pointer;
+ margin:6px;
+}
+#error{
+ color:#ffb3b3;
+ font-size:14px;
 }
 #timer{
-    font-size:20px;
-    color:yellow;
-    font-weight:bold;
+ font-size:22px;
+ color:#00ffea;
+ position:fixed;
+ top:20px;
+ right:30px;
+ background:rgba(0,0,0,0.5);
+ padding:10px 15px;
+ border-radius:10px;
+ z-index:1000;
+ display:none;
 }
+table{
+ width:100%;
+ border-collapse:collapse;
+ margin-top:10px;
+}
+th,td{
+ border:1px solid #ddd;
+ padding:8px;
+ color:white;
+ text-align:center;
+}
+h2,h3{margin-top:0;}
+hr{border:none;height:1px;background:linear-gradient(to right,transparent,#00ffe0,transparent);margin:15px 0;}
 </style>
 </head>
-
 <body>
 
-<h2>🧠 Online Interview System</h2>
+<h2>🧠 AI Interview Room System</h2>
 <p id="timer">Time: 10:00</p>
 
-<div class="box" id="startBox">
-    <input id="name" placeholder="Name"><br>
-    <input id="father" placeholder="Father Name"><br>
-    <input id="roll" placeholder="Roll No"><br>
-    <input id="cnic" placeholder="CNIC"><br><br>
-    <button onclick="startTest()">Start Interview</button>
+<!-- PAGE 1: Room & Role -->
+<div class="card" id="page1">
+<h3>Enter Room & Role</h3>
+<input id="inputRoom" placeholder="Enter Room Name (e.g. DJ123)"><br><br>
+<select id="inputRole">
+<option value="">Select Role</option>
+<option value="user">Candidate</option>
+<option value="admin">Admin</option>
+</select><br><br>
+<div id="roomError"></div>
+<button onclick="checkRoomRole()">Continue</button>
 </div>
 
-<div class="box" id="quizBox" style="display:none;">
-    <h3 id="qNo"></h3>
-    <p id="question"></p>
-    <textarea id="answer" rows="4" placeholder="Write your answer here..."></textarea><br><br>
-    <button onclick="submitAnswer()">Next</button>
-    <button onclick="skip()">Skip</button>
+<!-- PAGE 2: Admin Login -->
+<div class="card hidden" id="pageAdminLogin">
+<h3>Admin Login</h3>
+<input id="adminUser" placeholder="Username">
+<input id="adminPass" type="password" placeholder="Password">
+<div id="adminError"></div>
+<button onclick="loginAdmin()">Login</button>
+<button onclick="showPage('page1')">Back</button>
 </div>
 
-<div class="box" id="resultBox" style="display:none;"></div>
+<!-- PAGE 3: Candidate Info -->
+<div class="card hidden" id="pageCandidate">
+<h3>Candidate Information</h3>
+<input id="inputName" placeholder="Name">
+<input id="inputFather" placeholder="Father Name">
+<input id="inputRoll" placeholder="Roll No">
+<input id="inputCnic" placeholder="CNIC">
+<div id="infoError"></div>
+<button onclick="startInterview()">Start Interview</button>
+<button onclick="showPage('page1')">Back</button>
+</div>
+
+<!-- PAGE 4: Interview -->
+<div class="card hidden" id="pageInterview">
+<h3 id="qno"></h3>
+<p id="question"></p>
+<textarea id="inputAnswer" rows="4" placeholder="Write your answer..."></textarea><br>
+<button onclick="submitAnswer()">Next</button>
+<button onclick="skipQuestion()">Skip</button>
+<button onclick="endInterview()">End Early</button>
+</div>
+
+<!-- PAGE 5: Candidate Result -->
+<div class="card hidden" id="pageResult"></div>
+
+<!-- PAGE 6: Admin Dashboard -->
+<div class="card hidden" id="pageAdminPanel">
+<h3>Admin Dashboard - Room: <span id="adminRoomName"></span></h3>
+<table>
+<thead>
+<tr><th>Name</th><th>Roll</th><th>Father</th><th>CNIC</th><th>Score</th><th>Status</th></tr>
+</thead>
+<tbody id="adminRecords"></tbody>
+</table>
+<button onclick="showPage('page1')">Back</button>
+</div>
 
 <script>
-// ================= QUESTIONS + KEYWORDS =================
-let questions = [
- {q:"What is OOP?", k:["class","object","inheritance","polymorphism"]},
- {q:"Explain Python language", k:["python","high","interpreted","simple"]},
- {q:"What is Algorithm?", k:["step","procedure","solution"]},
- {q:"What is Machine Learning?", k:["data","model","learn","training"]},
- {q:"Explain HTML", k:["markup","web","structure"]},
- {q:"What is CSS?", k:["style","design","layout"]},
- {q:"Explain JavaScript", k:["logic","dynamic","browser"]},
- {q:"What is Loop?", k:["repeat","iteration","while","for"]},
- {q:"What is Array?", k:["multiple","collection","index"]},
- {q:"Explain Inheritance", k:["reuse","parent","child"]}
+// ===== Questions =====
+const questionsTemplate=[
+ {q:"Define Python",k:["language","interpreted","high"]},
+ {q:"Explain Python syntax",k:["indentation","simple","blocks"]},
+ {q:"What is OOP?",k:["class","object","oop"]},
+ {q:"Define Algorithm",k:["step","procedure","solution"]},
+ {q:"What is Loop?",k:["repeat","iteration","for"]},
+ {q:"What is Function?",k:["reuse","code","def"]},
+ {q:"Explain Inheritance",k:["parent","child","reuse"]},
+ {q:"Define Array",k:["collection","index","multiple"]},
+ {q:"What is Optimization?",k:["efficient","improve","time"]},
+ {q:"Use of Algorithm",k:["solve","problem","efficient"]}
 ];
 
-let skipped = [];
-let index = 0, score = 0;
-let time = 600;
+let room="",role="",index=0,score=0,time=600,skip=[],timer;
+let questions=[],originalQuestions=[];
 
-// ================= START =================
-function startTest(){
-    let n=document.getElementById("name").value;
-    let f=document.getElementById("father").value;
-    let r=document.getElementById("roll").value;
-    let c=document.getElementById("cnic").value;
-    if(n==""||f==""||r==""||c==""){
-        alert("Please fill all fields");
-        return;
-    }
-    document.getElementById("startBox").style.display="none";
-    document.getElementById("quizBox").style.display="block";
-    showQ();
-    startTimer();
+// ===== Page Control =====
+function showPage(id){
+ document.querySelectorAll(".card").forEach(c=>c.classList.add("hidden"));
+ document.getElementById(id).classList.remove("hidden");
 }
 
-function showQ(){
-    document.getElementById("qNo").innerText = "Question "+(index+1)+" / 10";
-    document.getElementById("question").innerText = questions[index].q;
-    document.getElementById("answer").value="";
+// ===== Room + Role Check =====
+function checkRoomRole(){
+ room=document.getElementById("inputRoom").value.trim();
+ role=document.getElementById("inputRole").value;
+ if(!room || !role){
+  document.getElementById("roomError").innerText="Enter Room & select Role";
+  return;
+ }
+ document.getElementById("roomError").innerText="";
+ if(role==="admin") showPage("pageAdminLogin");
+ else showPage("pageCandidate");
 }
 
+// ===== Admin Login =====
+function loginAdmin(){
+ const u=document.getElementById("adminUser").value;
+ const p=document.getElementById("adminPass").value;
+ if(u==="Umar" && p==="11223344"){
+  showPage("pageAdminPanel");
+  document.getElementById("adminRoomName").innerText=room;
+  loadAdminRecords();
+ } else document.getElementById("adminError").innerText="Wrong Credentials";
+}
+
+// ===== Load Admin Records =====
+function loadAdminRecords(){
+ const key="room_"+room+"_records";
+ let data=JSON.parse(localStorage.getItem(key)||"[]");
+ const tbody=document.getElementById("adminRecords");
+ tbody.innerHTML="";
+ data.forEach(r=>{
+  tbody.innerHTML+=`<tr>
+  <td>${r.name}</td><td>${r.roll}</td><td>${r.father}</td><td>${r.cnic}</td>
+  <td>${r.score}</td><td>${r.status}</td>
+  </tr>`;
+ });
+}
+
+// ===== Candidate Interview =====
+function startInterview(){
+ const n=document.getElementById("inputName").value.trim();
+ const f=document.getElementById("inputFather").value.trim();
+ const r=document.getElementById("inputRoll").value.trim();
+ const c=document.getElementById("inputCnic").value.trim();
+ if(!n || !f || !r || !c){
+  document.getElementById("infoError").innerText="All fields required";
+  return;
+ }
+ document.getElementById("infoError").innerText="";
+ index=0; score=0; skip=[]; time=600;
+ questions=[...questionsTemplate];
+ originalQuestions=[...questionsTemplate];
+ document.getElementById("timer").style.display="block";
+ showPage("pageInterview"); showQuestion(); startTimer();
+}
+
+// ===== Show Question =====
+function showQuestion(){
+ qno.innerText="Question "+(index+1)+" / 10";
+ question.innerText=questions[index].q;
+ inputAnswer.value="";
+}
+
+// ===== Submit Answer =====
 function submitAnswer(){
-    let ans = document.getElementById("answer").value.toLowerCase();
-    let keys = questions[index].k;
-    let matched=0;
-    keys.forEach(k=>{
-        if(ans.includes(k)) matched++;
-    });
-    if(matched>=2) score+=10; // threshold
-    next();
+ const ans=inputAnswer.value.toLowerCase(),keywords=questions[index].k;
+ let match=0;
+ keywords.forEach(k=>{if(ans.includes(k)) match++;});
+ if(match>=1) score+=10;
+ else skip.push(questions[index]);
+ nextQuestion();
 }
 
-function skip(){
-    skipped.push(questions[index]); // push full question object to skip array
-    next();
+// ===== Skip Question =====
+function skipQuestion(){skip.push(questions[index]); nextQuestion();}
+
+// ===== Next Question =====
+function nextQuestion(){
+ index++;
+ if(index < questions.length){
+     showQuestion();
+ } else if(skip.length > 0){
+     questions = [...skip]; // only show skipped once
+     skip = [];
+     index = 0;
+     showQuestion();
+ } else {
+     endInterview();
+ }
 }
 
-function next(){
-    index++;
-    if(index < questions.length){
-        showQ();
-    } else if(skipped.length>0){
-        // append skipped questions at the end
-        questions = skipped.concat([]);
-        skipped = [];
-        index = 0;
-        showQ();
-    } else {
-        endTest();
-    }
+// ===== End Interview =====
+function endInterview(){
+ clearInterval(timer);
+ const status=score>=70?"SELECTED ✅":"NOT SELECTED ❌";
+ const key="room_"+room+"_records";
+ const data=JSON.parse(localStorage.getItem(key)||"[]");
+ data.push({
+  name:document.getElementById("inputName").value,
+  father:document.getElementById("inputFather").value,
+  roll:document.getElementById("inputRoll").value,
+  cnic:document.getElementById("inputCnic").value,
+  score,status
+ });
+ localStorage.setItem(key,JSON.stringify(data));
+ showPage("pageResult");
+ pageResult.innerHTML=`<h3>Result</h3>
+ <p>Name: ${document.getElementById("inputName").value}</p>
+ <p>Score: ${score}/100</p>
+ <h2>${status}</h2>
+ <button onclick="location.reload()">Home</button>`;
+ document.getElementById("timer").style.display="none";
 }
 
-function endTest(){
-    document.getElementById("quizBox").style.display="none";
-    document.getElementById("resultBox").style.display="block";
-
-    let name = document.getElementById("name").value;
-    let father = document.getElementById("father").value;
-    let roll = document.getElementById("roll").value;
-    let cnic = document.getElementById("cnic").value;
-
-    let result = score>=70 ? "PASS ✅" : "FAIL ❌";
-
-    document.getElementById("resultBox").innerHTML = `
-    <h3>Result</h3>
-    <p>Name: ${name}</p>
-    <p>Father: ${father}</p>
-    <p>Roll No: ${roll}</p>
-    <p>CNIC: ${cnic}</p>
-    <h2>Score: ${score}/100</h2>
-    <h2>${result}</h2>
-    `;
-}
-
-// ================= TIMER =================
+// ===== Timer =====
 function startTimer(){
-    let t=setInterval(()=>{
-        time--;
-        let m=Math.floor(time/60);
-        let s=time%60;
-        document.getElementById("timer").innerText = `Time: ${m}:${s<10?'0'+s:s}`;
-        if(time<=0){
-            clearInterval(t);
-            endTest();
-        }
-    },1000);
+ timer=setInterval(()=>{
+  time--;
+  document.getElementById("timer").innerText="Time: "+Math.floor(time/60)+":"+String(time%60).padStart(2,"0");
+  if(time<=0) endInterview();
+ },1000);
 }
 </script>
-
 </body>
 </html>
